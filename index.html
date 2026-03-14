@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Stageneer AI — Virtual Apartment Staging</title>
+<title>Stageneer AI</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Playfair+Display:wght@400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,6 +23,21 @@
   .badge { display: inline-block; background: var(--accent-light); color: var(--accent); font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 100px; letter-spacing: 0.5px; text-transform: uppercase; }
   .panel { background: var(--warm-white); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; }
   .panel-title { font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-light); margin-bottom: 1rem; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: var(--radius-sm); border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--charcoal); color: white; }
+  .btn-primary:hover { background: #333; }
+  .btn-primary:disabled { background: var(--text-light); cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--charcoal); border: 0.5px solid var(--border-strong); }
+  .btn-secondary:hover { background: var(--cream); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-danger { background: transparent; color: #C0392B; border: 0.5px solid rgba(192,57,43,0.3); }
+  .btn-danger:hover { background: #FEF0EE; }
+  input[type=text], input[type=password], textarea {
+    width: 100%; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm);
+    padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    color: var(--charcoal); background: var(--warm-white); resize: none; outline: none; transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
   .upload-zone { border: 1.5px dashed var(--border-strong); border-radius: var(--radius); padding: 2.5rem; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
   .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: var(--accent-light); }
   .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
@@ -33,7 +48,7 @@
   .photo-thumb { position: relative; aspect-ratio: 4/3; border-radius: var(--radius-sm); overflow: hidden; border: 0.5px solid var(--border); transition: transform 0.15s; }
   .photo-thumb:hover { transform: scale(1.02); }
   .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-thumb .remove-btn { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s; }
+  .photo-thumb .remove-btn { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; font-size: 11px; cursor: pointer; opacity: 0; transition: opacity 0.15s; display: flex; align-items: center; justify-content: center; }
   .photo-thumb:hover .remove-btn { opacity: 1; }
   .style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
   .style-card { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative; }
@@ -43,13 +58,6 @@
   .style-swatch { height: 48px; border-radius: 6px; margin-bottom: 10px; }
   .style-card h4 { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
   .style-card p { font-size: 11px; color: var(--text-light); }
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: var(--radius-sm); border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-  .btn-primary { background: var(--charcoal); color: white; }
-  .btn-primary:hover { background: #333; }
-  .btn-primary:disabled { background: var(--text-light); cursor: not-allowed; }
-  .btn-secondary { background: transparent; color: var(--charcoal); border: 0.5px solid var(--border-strong); }
-  .btn-secondary:hover { background: var(--cream); }
-  .btn-sm { padding: 6px 12px; font-size: 12px; }
   .step-indicator { display: flex; align-items: center; margin-bottom: 2rem; }
   .step { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-light); flex: 1; }
   .step.active { color: var(--charcoal); }
@@ -70,7 +78,6 @@
   .room-group-header:hover { background: var(--cream); }
   .room-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .room-group-title { font-weight: 500; font-size: 14px; flex: 1; }
-  .room-group-count { font-size: 12px; color: var(--text-light); }
   .room-photos { padding: 0 1.5rem 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
   .room-photo { aspect-ratio: 4/3; border-radius: 6px; overflow: hidden; border: 0.5px solid var(--border); }
   .room-photo img { width: 100%; height: 100%; object-fit: cover; }
@@ -81,9 +88,6 @@
   .before-after img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .ba-label { position: absolute; bottom: 6px; left: 6px; font-size: 10px; font-weight: 500; background: rgba(0,0,0,0.55); color: white; padding: 2px 6px; border-radius: 100px; }
   .tag { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 11px; font-weight: 500; }
-  textarea, input[type=text], input[type=password] { width: 100%; border: 0.5px solid var(--border-strong); border-radius: var(--radius-sm); padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--charcoal); background: var(--warm-white); resize: none; outline: none; transition: border-color 0.15s; }
-  textarea:focus, input:focus { border-color: var(--accent); }
-  .api-key-notice { background: #FFFBEB; border: 0.5px solid #F59E0B; border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: #92400E; margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 10px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
   .bible-card { background: linear-gradient(135deg, #FAF8F4, #F5EDE5); border: 0.5px solid var(--accent); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; }
@@ -94,12 +98,23 @@
   .bible-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .bible-item { font-size: 12px; }
   .bible-item span { color: var(--text-light); display: block; margin-bottom: 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .projects-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .project-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; border: 0.5px solid var(--border-strong); background: var(--warm-white); font-size: 12px; cursor: pointer; transition: all 0.15s; }
-  .project-chip:hover { border-color: var(--accent); background: var(--accent-light); }
-  .project-chip.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 500; }
-  .del-btn { background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 0 0 2px; }
-  .del-btn:hover { color: #C0392B; }
+
+  /* Project cards on landing page */
+  .project-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .project-card { background: var(--warm-white); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; cursor: pointer; transition: all 0.2s; position: relative; }
+  .project-card:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(200,149,108,0.12); transform: translateY(-2px); }
+  .project-card-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+  .project-card-meta { font-size: 12px; color: var(--text-light); margin-bottom: 10px; }
+  .project-card-style { display: inline-block; background: var(--accent-light); color: var(--accent); font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 100px; margin-bottom: 10px; }
+  .project-card-rooms { display: flex; gap: 4px; flex-wrap: wrap; }
+  .project-card-room { font-size: 11px; color: var(--text-mid); background: var(--cream); border: 0.5px solid var(--border-strong); padding: 2px 8px; border-radius: 100px; }
+  .project-card-del { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+  .project-card-del:hover { color: #C0392B; background: #FEF0EE; }
+  .new-project-card { background: var(--warm-white); border: 1.5px dashed var(--border-strong); border-radius: var(--radius); padding: 1.25rem; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 140px; }
+  .new-project-card:hover { border-color: var(--accent); background: var(--accent-light); }
+  .new-project-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-light); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .new-project-card h3 { font-size: 14px; font-weight: 500; }
+  .new-project-card p { font-size: 12px; color: var(--text-light); text-align: center; }
 </style>
 </head>
 <body>
@@ -110,18 +125,29 @@
       <h1>Stageneer AI</h1>
       <span class="badge">Beta</span>
     </div>
-    <p>Upload all your apartment photos — we'll identify each room and stage the whole apartment in one consistent style.</p>
+    <p>AI-powered virtual staging — upload your apartment photos and stage every room in one consistent style.</p>
   </div>
 
-  <div id="api-key-section" class="panel">
-    <div class="panel-title">Anthropic API Key</div>
-<div style="display:flex; gap:10px;">
-      <input type="password" id="api-key-input" placeholder="sk-ant-api..." style="flex:1;" />
-      <button class="btn btn-primary" onclick="saveApiKey()">Save key</button>
+  <!-- API Key screen -->
+  <div id="phase-apikey">
+    <div class="panel" style="max-width:480px;">
+      <div class="panel-title">Enter your Anthropic API key to get started</div>
+      <div style="display:flex; gap:10px;">
+        <input type="password" id="api-key-input" placeholder="sk-ant-api..." style="flex:1;" onkeydown="if(event.key==='Enter')saveApiKey()" />
+        <button class="btn btn-primary" onclick="saveApiKey()">Continue →</button>
+      </div>
+      <div id="key-status" style="margin-top:8px; font-size:12px; color:var(--text-light);"></div>
+      <p style="margin-top:12px; font-size:12px; color:var(--text-light);">Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a></p>
     </div>
-    <div id="key-status" style="margin-top:8px; font-size:12px; color:var(--text-light);"></div>
   </div>
 
+  <!-- Landing: project selector -->
+  <div id="phase-landing" style="display:none;">
+    <div class="panel-title">Your projects</div>
+    <div id="project-cards-grid" class="project-cards-grid"></div>
+  </div>
+
+  <!-- Steps (shown inside a project) -->
   <div id="step-indicator" class="step-indicator" style="display:none;">
     <div class="step active" id="step1"><div class="step-num">1</div><span>Upload</span></div>
     <div class="step-connector"></div>
@@ -132,12 +158,8 @@
     <div class="step" id="step4"><div class="step-num">4</div><span>Results</span></div>
   </div>
 
-  <div id="phase-upload">
-    <div id="projects-bar" class="projects-bar" style="display:none;">
-      <span style="font-size:12px; color:var(--text-light); flex-shrink:0;">Saved projects:</span>
-      <div id="project-chips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-      <button class="btn btn-secondary btn-sm" onclick="newProject()">+ New project</button>
-    </div>
+  <!-- Upload phase -->
+  <div id="phase-upload" style="display:none;">
     <div class="panel">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
         <div class="panel-title" style="margin-bottom:0;">Photos</div>
@@ -151,11 +173,13 @@
       </div>
       <div id="photos-grid" class="photos-grid"></div>
     </div>
-    <div style="display:flex; justify-content:flex-end;">
+    <div style="display:flex; justify-content:space-between;">
+      <button class="btn btn-secondary" onclick="goToLanding()">← All projects</button>
       <button class="btn btn-primary" id="analyze-btn" onclick="startAnalysis()" disabled>Analyze rooms →</button>
     </div>
   </div>
 
+  <!-- Analysis phase -->
   <div id="phase-analysis" style="display:none;">
     <div class="panel" style="overflow:hidden;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
@@ -168,12 +192,13 @@
       </div>
       <div id="room-groups"></div>
     </div>
-    <div style="display:flex; justify-content:flex-end; gap:10px;" id="analysis-actions" style="display:none !important;">
+    <div style="display:flex; justify-content:space-between;" id="analysis-actions" style="display:none !important;">
       <button class="btn btn-secondary" onclick="goBack('upload')">← Back</button>
       <button class="btn btn-primary" onclick="goToStyle()">Choose style →</button>
     </div>
   </div>
 
+  <!-- Style phase -->
   <div id="phase-style" style="display:none;">
     <div class="panel">
       <div class="panel-title">Staging style</div>
@@ -208,12 +233,13 @@
       <div class="panel-title">Additional notes (optional)</div>
       <textarea id="extra-notes" rows="3" placeholder="E.g. 'keep the exposed brick wall', 'prefer warmer lighting', 'budget mid-range furniture'…"></textarea>
     </div>
-    <div style="display:flex; justify-content:flex-end; gap:10px;">
+    <div style="display:flex; justify-content:space-between;">
       <button class="btn btn-secondary" onclick="goBack('analysis')">← Back</button>
       <button class="btn btn-primary" id="stage-btn" onclick="startStaging()" disabled>Generate Style Bible & stage →</button>
     </div>
   </div>
 
+  <!-- Results phase -->
   <div id="phase-results" style="display:none;">
     <div id="staging-progress-panel" class="panel">
       <div class="panel-title">Progress</div>
@@ -221,10 +247,12 @@
     </div>
     <div id="bible-display"></div>
     <div id="results-grid" class="results-grid"></div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:1rem;" id="results-actions" style="display:none !important;">
-      <button class="btn btn-secondary" onclick="saveProject()">💾 Save project</button>
-      <button class="btn btn-secondary" onclick="startOver()">Start over</button>
-      <button class="btn btn-primary" onclick="downloadReport()">Download report</button>
+    <div style="display:flex; justify-content:space-between; margin-top:1rem;" id="results-actions" style="display:none !important;">
+      <button class="btn btn-secondary" onclick="goToLanding()">← All projects</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" onclick="saveProject()">💾 Save project</button>
+        <button class="btn btn-primary" onclick="downloadReport()">Download report</button>
+      </div>
     </div>
   </div>
 
@@ -239,6 +267,7 @@ let stagingResults = [];
 let currentProjectId = null;
 const ROOM_COLORS = ['#C8956C','#4A7C59','#3B6EA5','#9B59B6','#E74C3C','#F39C12','#1ABC9C','#C0392B'];
 
+// ── API Key ──────────────────────────────────────────────
 function saveApiKey() {
   const k = document.getElementById('api-key-input').value.trim();
   if (!k.startsWith('sk-ant')) {
@@ -247,30 +276,93 @@ function saveApiKey() {
     return;
   }
   apiKey = k;
-  document.getElementById('key-status').textContent = '✓ Key saved';
-  document.getElementById('key-status').style.color = '#4A7C59';
-  document.getElementById('api-key-section').style.display = 'none';
-  document.getElementById('step-indicator').style.display = 'flex';
-  loadProjects();
+  document.getElementById('phase-apikey').style.display = 'none';
+  goToLanding();
 }
 
+// ── Projects ─────────────────────────────────────────────
 function getProjects() { try { return JSON.parse(localStorage.getItem('stageneer_projects') || '{}'); } catch { return {}; } }
 function saveProjectsToStorage(p) { localStorage.setItem('stageneer_projects', JSON.stringify(p)); }
 
-function loadProjects() {
+function goToLanding() {
+  ['phase-upload','phase-analysis','phase-style','phase-results'].forEach(p => document.getElementById(p).style.display = 'none');
+  document.getElementById('step-indicator').style.display = 'none';
+  document.getElementById('phase-landing').style.display = '';
+  renderLanding();
+}
+
+function renderLanding() {
   const projects = getProjects();
-  const keys = Object.keys(projects);
-  const bar = document.getElementById('projects-bar');
-  const chips = document.getElementById('project-chips');
-  if (keys.length === 0) { bar.style.display = 'none'; return; }
-  bar.style.display = 'flex';
-  chips.innerHTML = keys.map(id => {
+  const keys = Object.keys(projects).sort((a,b) => (projects[b].savedAt||'').localeCompare(projects[a].savedAt||''));
+  const grid = document.getElementById('project-cards-grid');
+
+  let html = '';
+  keys.forEach(id => {
     const p = projects[id];
-    return `<div class="project-chip ${currentProjectId === id ? 'active' : ''}" onclick="loadProject('${id}')">
-      <span>${p.name}</span>
-      <button class="del-btn" onclick="event.stopPropagation();deleteProject('${id}')">×</button>
-    </div>`;
-  }).join('');
+    const roomNames = (p.results||[]).map(r => r.roomName).slice(0,4);
+    const date = p.savedAt ? new Date(p.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    html += '<div class="project-card" onclick="loadProject(\'' + id + '\')">' +
+      '<button class="project-card-del" onclick="event.stopPropagation();deleteProject(\'' + id + '\')">×</button>' +
+      '<div class="project-card-title">' + escHtml(p.name) + '</div>' +
+      '<div class="project-card-meta">' + date + ' · ' + (p.results||[]).length + ' rooms</div>' +
+      '<div class="project-card-style">' + escHtml(p.style||'') + '</div>' +
+      '<div class="project-card-rooms">' + roomNames.map(r => '<span class="project-card-room">' + escHtml(r) + '</span>').join('') + ((p.results||[]).length > 4 ? '<span class="project-card-room">+' + ((p.results||[]).length - 4) + ' more</span>' : '') + '</div>' +
+    '</div>';
+  });
+
+  // Always add "New project" card at the end
+  html += '<div class="new-project-card" onclick="startNewProject()">' +
+    '<div class="new-project-icon">+</div>' +
+    '<h3>New project</h3>' +
+    '<p>Upload photos of an apartment and stage every room</p>' +
+  '</div>';
+
+  grid.innerHTML = html;
+}
+
+function startNewProject() {
+  currentProjectId = null;
+  photos = []; roomGroups = []; selectedStyle = ''; styleBible = null; stagingResults = [];
+  document.getElementById('photos-grid').innerHTML = '';
+  document.getElementById('project-name-input').value = '';
+  document.getElementById('results-grid').innerHTML = '';
+  document.getElementById('bible-display').innerHTML = '';
+  document.getElementById('phase-landing').style.display = 'none';
+  document.getElementById('step-indicator').style.display = 'flex';
+  document.getElementById('phase-upload').style.display = '';
+  updateSteps('upload');
+}
+
+function loadProject(id) {
+  const projects = getProjects();
+  const p = projects[id];
+  if (!p) return;
+  currentProjectId = id;
+  selectedStyle = p.style;
+  styleBible = p.styleBible;
+  stagingResults = (p.results||[]).map(r => ({ room: { roomName: r.roomName }, concept: r.concept, stagedImageUrl: r.stagedImageUrl, color: r.color, photos: [] }));
+  document.getElementById('project-name-input').value = p.name;
+  document.getElementById('phase-landing').style.display = 'none';
+  document.getElementById('step-indicator').style.display = 'flex';
+  ['phase-upload','phase-analysis','phase-style'].forEach(ph => document.getElementById(ph).style.display = 'none');
+  document.getElementById('phase-results').style.display = '';
+  updateSteps('results');
+  document.getElementById('staging-progress-content').innerHTML = '<div class="status-msg success">✓ Loaded: <strong>' + escHtml(p.name) + '</strong> — ' + escHtml(p.style||'') + ' style</div>';
+  document.getElementById('bible-display').innerHTML = '';
+  if (p.styleBible) renderBible(p.styleBible);
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = '';
+  stagingResults.forEach((r, ri) => renderResultCard(grid, r.room, r.concept, r.color, r.stagedImageUrl, ri));
+  document.getElementById('results-actions').style.display = 'flex';
+}
+
+function deleteProject(id) {
+  if (!confirm('Delete this project?')) return;
+  const projects = getProjects();
+  delete projects[id];
+  saveProjectsToStorage(projects);
+  if (currentProjectId === id) currentProjectId = null;
+  renderLanding();
 }
 
 function saveProject() {
@@ -285,58 +377,14 @@ function saveProject() {
     savedAt: new Date().toISOString()
   };
   saveProjectsToStorage(projects);
-  loadProjects();
   alert('Project "' + name + '" saved!');
 }
 
-function loadProject(id) {
-  const projects = getProjects();
-  const p = projects[id];
-  if (!p) return;
-  currentProjectId = id;
-  selectedStyle = p.style;
-  styleBible = p.styleBible;
-  stagingResults = (p.results || []).map(r => ({ room: { roomName: r.roomName }, concept: r.concept, stagedImageUrl: r.stagedImageUrl, color: r.color, photos: [] }));
-  document.getElementById('project-name-input').value = p.name;
-  ['upload','analysis','style'].forEach(ph => document.getElementById('phase-' + ph).style.display = 'none');
-  document.getElementById('phase-results').style.display = '';
-  updateSteps('results');
-  document.getElementById('staging-progress-content').innerHTML = '<div class="status-msg success">✓ Loaded: <strong>' + p.name + '</strong> — ' + p.style + ' style</div>';
-  if (p.styleBible) renderBible(p.styleBible);
-  const grid = document.getElementById('results-grid');
-  grid.innerHTML = '';
-  stagingResults.forEach((r, ri) => renderResultCard(grid, r.room, r.concept, r.color, r.stagedImageUrl, ri));
-  document.getElementById('results-actions').style.display = 'flex';
-  loadProjects();
-}
-
-function deleteProject(id) {
-  if (!confirm('Delete this project?')) return;
-  const projects = getProjects();
-  delete projects[id];
-  saveProjectsToStorage(projects);
-  if (currentProjectId === id) currentProjectId = null;
-  loadProjects();
-}
-
-function newProject() {
-  currentProjectId = null;
-  photos = []; roomGroups = []; selectedStyle = ''; styleBible = null; stagingResults = [];
-  document.getElementById('photos-grid').innerHTML = '';
-  document.getElementById('project-name-input').value = '';
-  document.getElementById('results-grid').innerHTML = '';
-  document.getElementById('bible-display').innerHTML = '';
-  ['analysis','style','results'].forEach(p => document.getElementById('phase-' + p).style.display = 'none');
-  document.getElementById('phase-upload').style.display = '';
-  updateSteps('upload');
-  loadProjects();
-}
-
+// ── Upload ────────────────────────────────────────────────
 const uploadZone = document.getElementById('upload-zone');
 uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
 uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
-
 function handleFiles(files) {
   Array.from(files).forEach(file => {
     if (!file.type.startsWith('image/')) return;
@@ -353,8 +401,9 @@ function renderPhotos() {
 }
 function removePhoto(id) { photos = photos.filter(p => String(p.id) !== String(id)); renderPhotos(); }
 
+// ── Navigation ────────────────────────────────────────────
 function goBack(phase) {
-  ['upload','analysis','style','results'].forEach(p => document.getElementById('phase-' + p).style.display = 'none');
+  ['phase-upload','phase-analysis','phase-style','phase-results'].forEach(p => document.getElementById(p).style.display = 'none');
   document.getElementById('phase-' + phase).style.display = '';
   updateSteps(phase);
 }
@@ -378,6 +427,7 @@ function selectStyle(el, name) {
   document.getElementById('stage-btn').disabled = false;
 }
 
+// ── Analysis ──────────────────────────────────────────────
 async function startAnalysis() {
   document.getElementById('phase-upload').style.display = 'none';
   document.getElementById('phase-analysis').style.display = '';
@@ -394,8 +444,7 @@ async function startAnalysis() {
     const jsonMatch = res.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error('Could not parse room data. Try uploading fewer photos (max 10).');
     roomGroups = JSON.parse(jsonMatch[0]);
-    bar.style.width = '100%';
-    label.textContent = 'Found ' + roomGroups.length + ' distinct rooms';
+    bar.style.width = '100%'; label.textContent = 'Found ' + roomGroups.length + ' distinct rooms';
     document.getElementById('analysis-status-badge').textContent = roomGroups.length + ' rooms';
     document.getElementById('analysis-status-badge').style.background = '#EBF3EE';
     document.getElementById('analysis-status-badge').style.color = '#4A7C59';
@@ -407,7 +456,6 @@ async function startAnalysis() {
     bar.style.background = '#E74C3C';
   }
 }
-
 function renderRoomGroups() {
   const container = document.getElementById('room-groups');
   container.innerHTML = roomGroups.map((room, ri) => {
@@ -415,12 +463,12 @@ function renderRoomGroups() {
     const roomPhotos = room.photoIndices.map(i => photos[i]).filter(Boolean);
     return '<div class="room-group"><div class="room-group-header" onclick="toggleGroup(' + ri + ')">' +
       '<div class="room-dot" style="background:' + color + '"></div>' +
-      '<span class="room-group-title">' + room.roomName + '</span>' +
-      '<span class="room-group-count">' + roomPhotos.length + ' photo' + (roomPhotos.length !== 1 ? 's' : '') + '</span>' +
-      '<span style="color:var(--text-light); font-size:12px; margin-left:4px;">↕</span></div>' +
+      '<span class="room-group-title">' + escHtml(room.roomName) + '</span>' +
+      '<span style="color:var(--text-light);font-size:12px;">' + roomPhotos.length + ' photo' + (roomPhotos.length!==1?'s':'') + '</span>' +
+      '<span style="color:var(--text-light);font-size:12px;margin-left:4px;">↕</span></div>' +
       '<div class="room-photos" id="room-group-' + ri + '">' +
       roomPhotos.map(p => '<div class="room-photo"><img src="' + p.dataUrl + '" /></div>').join('') +
-      (room.features ? '<div style="grid-column:1/-1; font-size:12px; color:var(--text-light); padding-top:4px;">✦ ' + room.features + '</div>' : '') +
+      (room.features ? '<div style="grid-column:1/-1;font-size:12px;color:var(--text-light);padding-top:4px;">✦ ' + escHtml(room.features) + '</div>' : '') +
       '</div></div>';
   }).join('');
   document.getElementById('analysis-actions').style.display = 'flex';
@@ -430,6 +478,7 @@ function toggleGroup(ri) {
   el.style.display = el.style.display === 'none' ? 'grid' : 'none';
 }
 
+// ── Staging ───────────────────────────────────────────────
 async function startStaging() {
   document.getElementById('phase-style').style.display = 'none';
   document.getElementById('phase-results').style.display = '';
@@ -441,18 +490,17 @@ async function startStaging() {
   const resultsGrid = document.getElementById('results-grid');
   const notes = document.getElementById('extra-notes').value.trim();
 
-  // Step 1: Generate Style Bible
+  // Step 1: Style Bible
   progressContent.innerHTML = '<div class="status-msg info" style="display:flex;align-items:center;gap:10px;"><div class="spinner"></div> Generating Style Bible for the whole apartment…</div>';
-  const allRoomDescriptions = roomGroups.map(r => r.roomName + ': ' + (r.features || 'standard')).join('\n');
-  const biblePrompt = 'You are a world-class interior designer staging an entire apartment in ' + selectedStyle + ' style.\nRooms:\n' + allRoomDescriptions + '\n' + (notes ? 'Client notes: ' + notes : '') + '\n\nCreate a single cohesive Style Bible used consistently across ALL rooms so the apartment feels unified.\n\nRespond ONLY with JSON, no markdown:\n{"styleName":"' + selectedStyle + '","tagline":"One evocative sentence","palette":["#hex1","#hex2","#hex3","#hex4"],"paletteNames":["name1","name2","name3","name4"],"woodTone":"specific description","metalFinish":"e.g. brushed brass","fabricPalette":"e.g. oatmeal boucle, linen","lightingTemp":"e.g. 2700K warm white","flooringApproach":"approach","keyMaterials":["m1","m2","m3"],"avoidMaterials":["a1","a2"],"overallMood":"Two sentences on atmosphere"}';
-
+  const allRoomDesc = roomGroups.map(r => r.roomName + ': ' + (r.features||'standard')).join('\n');
+  const biblePrompt = 'You are a world-class interior designer staging an entire apartment in ' + selectedStyle + ' style.\nRooms:\n' + allRoomDesc + '\n' + (notes ? 'Client notes: ' + notes : '') + '\n\nCreate a single cohesive Style Bible used across ALL rooms so the apartment feels unified.\n\nRespond ONLY with JSON, no markdown:\n{"styleName":"' + selectedStyle + '","tagline":"One evocative sentence","palette":["#hex1","#hex2","#hex3","#hex4"],"paletteNames":["n1","n2","n3","n4"],"woodTone":"specific","metalFinish":"e.g. brushed brass","fabricPalette":"e.g. oatmeal boucle, linen","lightingTemp":"e.g. 2700K warm white","flooringApproach":"approach","keyMaterials":["m1","m2","m3"],"avoidMaterials":["a1","a2"],"overallMood":"Two sentences"}';
   try {
     const bibleText = await callClaude([{ type: 'text', text: biblePrompt }], 800);
     const bibleMatch = bibleText.match(/\{[\s\S]*\}/);
-    if (!bibleMatch) throw new Error('Could not generate Style Bible');
+    if (!bibleMatch) throw new Error('Could not parse Style Bible');
     styleBible = JSON.parse(bibleMatch[0]);
     renderBible(styleBible);
-    progressContent.innerHTML = '<div class="status-msg success">✓ Style Bible created — staging ' + roomGroups.length + ' rooms with consistent design…</div>';
+    progressContent.innerHTML = '<div class="status-msg success">✓ Style Bible created — staging ' + roomGroups.length + ' rooms…</div>';
   } catch (err) {
     progressContent.innerHTML = '<div class="status-msg error">Style Bible error: ' + err.message + '. Continuing…</div>';
     styleBible = null;
@@ -464,37 +512,30 @@ async function startStaging() {
     const color = ROOM_COLORS[ri % ROOM_COLORS.length];
     const roomPhotos = room.photoIndices.map(i => photos[i]).filter(Boolean);
     if (roomPhotos.length === 0) continue;
-
-    progressContent.innerHTML = '<div class="status-msg info" style="display:flex;align-items:center;gap:10px;"><div class="spinner"></div> Staging room ' + (ri+1) + ' of ' + roomGroups.length + ': <strong style="margin-left:4px;">' + room.roomName + '</strong>…</div><div class="progress-bar-wrap"><div class="progress-bar" style="width:' + Math.round((ri/roomGroups.length)*100) + '%"></div></div>';
-
+    progressContent.innerHTML = '<div class="status-msg info" style="display:flex;align-items:center;gap:10px;"><div class="spinner"></div> Staging room ' + (ri+1) + ' of ' + roomGroups.length + ': <strong style="margin-left:4px;">' + escHtml(room.roomName) + '</strong>…</div><div class="progress-bar-wrap"><div class="progress-bar" style="width:' + Math.round((ri/roomGroups.length)*100) + '%"></div></div>';
     const card = document.createElement('div');
     card.className = 'result-card'; card.id = 'card-' + ri;
-    card.innerHTML = '<div style="aspect-ratio:4/3;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div class="spinner"></div><div style="font-size:12px;color:var(--text-light);">Generating ' + room.roomName + '…</div></div><div style="padding:1rem;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:' + color + ';"></div><span style="font-weight:500;font-size:14px;">' + room.roomName + '</span></div></div>';
+    card.innerHTML = '<div style="aspect-ratio:4/3;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div class="spinner"></div><div style="font-size:12px;color:var(--text-light);">Generating ' + escHtml(room.roomName) + '…</div></div><div style="padding:1rem;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:' + color + ';"></div><span style="font-weight:500;font-size:14px;">' + escHtml(room.roomName) + '</span></div></div>';
     resultsGrid.appendChild(card);
-
     try {
       const imageContents = roomPhotos.map(p => ({ type: 'image', source: { type: 'base64', media_type: getMime(p.dataUrl), data: p.dataUrl.split(',')[1] } }));
-      const bibleContext = styleBible ? '\nSTYLE BIBLE — apply these EXACT specs across all rooms:\n- Wood: ' + styleBible.woodTone + '\n- Metal: ' + styleBible.metalFinish + '\n- Fabrics: ' + styleBible.fabricPalette + '\n- Lighting: ' + styleBible.lightingTemp + '\n- Flooring: ' + styleBible.flooringApproach + '\n- Use: ' + (styleBible.keyMaterials||[]).join(', ') + '\n- Avoid: ' + (styleBible.avoidMaterials||[]).join(', ') : '';
-      const stagingPrompt = 'You are staging this ' + room.roomName + ' in ' + selectedStyle + ' style.\nArchitectural features: ' + (room.features||'standard') + bibleContext + '\n' + (notes ? 'Notes: ' + notes : '') + '\n\nCreate a staging concept strictly following the Style Bible so this room matches the rest of the apartment.\n\nRespond ONLY with JSON, no markdown:\n{"headline":"max 8 words","imagePrompt":"Detailed photorealistic prompt for this ' + room.roomName + ' staged in ' + selectedStyle + '. Include the exact wood, metals, fabrics, lighting from the Style Bible. Start with \'Professionally staged ' + room.roomName + ',\'","furniture":["item1","item2","item3"],"textiles":["t1","t2"],"lighting":"note","keyPiece":"hero piece","stylistNote":"one sentence"}';
-
+      const bibleCtx = styleBible ? '\nSTYLE BIBLE — apply these EXACT specs to match the rest of the apartment:\n- Wood: ' + styleBible.woodTone + '\n- Metal: ' + styleBible.metalFinish + '\n- Fabrics: ' + styleBible.fabricPalette + '\n- Lighting: ' + styleBible.lightingTemp + '\n- Flooring: ' + styleBible.flooringApproach + '\n- Use: ' + (styleBible.keyMaterials||[]).join(', ') + '\n- Avoid: ' + (styleBible.avoidMaterials||[]).join(', ') : '';
+      const stagingPrompt = 'Stage this ' + room.roomName + ' in ' + selectedStyle + ' style.\nFeatures: ' + (room.features||'standard') + bibleCtx + '\n' + (notes ? 'Notes: ' + notes : '') + '\n\nStrictly follow the Style Bible so this room matches the whole apartment.\n\nRespond ONLY with JSON:\n{"headline":"max 8 words","imagePrompt":"Detailed photorealistic prompt. Start with \'Professionally staged ' + room.roomName + ',\'. Include exact wood, metals, fabrics, lighting from the Style Bible.","furniture":["i1","i2","i3"],"textiles":["t1","t2"],"lighting":"note","keyPiece":"hero piece","stylistNote":"one sentence"}';
       const text = await callClaude([...imageContents, { type: 'text', text: stagingPrompt }], 900);
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('Could not parse staging concept.');
       const concept = JSON.parse(jsonMatch[0]);
-
       if (ri > 0) await sleep(7000);
       const fullPrompt = concept.imagePrompt + ', photorealistic, professional real estate photography, high quality, natural lighting, no people, no text';
       const seed = Math.floor(Math.random() * 999999);
       const stagedImageUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(fullPrompt) + '?width=1024&height=768&nologo=true&seed=' + seed;
-
       stagingResults.push({ room, concept, color, photos: roomPhotos, stagedImageUrl });
       renderResultCard(resultsGrid, room, concept, color, stagedImageUrl, ri);
     } catch (err) {
-      document.getElementById('card-' + ri).innerHTML = '<div style="padding:1rem; color:#C0392B; font-size:13px;">Error staging ' + room.roomName + ': ' + err.message + '</div>';
+      document.getElementById('card-' + ri).innerHTML = '<div style="padding:1rem;color:#C0392B;font-size:13px;">Error staging ' + escHtml(room.roomName) + ': ' + err.message + '</div>';
     }
   }
-
-  progressContent.innerHTML = '<div class="status-msg success">✓ All ' + roomGroups.length + ' rooms staged in <strong>' + selectedStyle + '</strong> with a unified Style Bible</div>';
+  progressContent.innerHTML = '<div class="status-msg success">✓ All ' + roomGroups.length + ' rooms staged in <strong>' + escHtml(selectedStyle) + '</strong> with a unified Style Bible</div>';
   document.getElementById('results-actions').style.display = 'flex';
 }
 
@@ -502,24 +543,24 @@ function renderResultCard(grid, room, concept, color, stagedImageUrl, ri) {
   const existing = document.getElementById('card-' + ri);
   const card = existing || document.createElement('div');
   card.className = 'result-card';
-  const palette = styleBible ? (styleBible.palette || []) : [];
+  const palette = styleBible ? (styleBible.palette||[]) : [];
   const beforePhoto = stagingResults[ri] && stagingResults[ri].photos && stagingResults[ri].photos[0];
   card.innerHTML =
     '<div class="before-after">' +
       '<div>' + (beforePhoto ? '<img src="' + beforePhoto.dataUrl + '" />' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-light);">No photo</div>') + '<span class="ba-label">Before</span></div>' +
       '<div><img src="' + stagedImageUrl + '" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" />' +
-        '<div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:1rem;background:' + lighten(color) + ';"><div style="font-size:11px;text-align:center;color:var(--text-mid);">Image loading…</div></div>' +
+        '<div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:' + lighten(color) + ';"><div style="font-size:11px;color:var(--text-mid);">Image loading…</div></div>' +
         '<span class="ba-label">After</span></div>' +
     '</div>' +
     '<div style="padding:1rem;">' +
       '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;"><div style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;margin-top:5px;"></div>' +
-        '<div><h4 style="font-size:14px;font-weight:500;">' + room.roomName + '</h4><p style="color:var(--accent);font-style:italic;font-size:13px;margin-top:2px;">' + concept.headline + '</p></div></div>' +
+        '<div><h4 style="font-size:14px;font-weight:500;">' + escHtml(room.roomName) + '</h4><p style="color:var(--accent);font-style:italic;font-size:13px;margin-top:2px;">' + escHtml(concept.headline) + '</p></div></div>' +
       '<div style="border-top:0.5px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:6px;">' +
         (palette.length ? '<div style="font-size:12px;display:flex;align-items:center;gap:6px;"><span style="color:var(--text-light);">Palette:</span>' + palette.map(c => '<div title="' + c + '" style="width:14px;height:14px;border-radius:50%;background:' + c + ';border:0.5px solid var(--border-strong);"></div>').join('') + '</div>' : '') +
-        '<div style="font-size:12px;"><span style="color:var(--text-light);">Key piece:</span> ' + concept.keyPiece + '</div>' +
-        '<div style="font-size:12px;"><span style="color:var(--text-light);">Lighting:</span> ' + concept.lighting + '</div>' +
-        '<div style="font-size:12px;display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">' + (concept.furniture||[]).map(f => '<span class="tag" style="background:var(--cream);color:var(--text-mid);border:0.5px solid var(--border-strong);">' + f + '</span>').join('') + '</div>' +
-        '<div style="font-size:12px;color:var(--text-mid);font-style:italic;border-top:0.5px solid var(--border);padding-top:8px;margin-top:2px;">"' + concept.stylistNote + '"</div>' +
+        '<div style="font-size:12px;"><span style="color:var(--text-light);">Key piece:</span> ' + escHtml(concept.keyPiece) + '</div>' +
+        '<div style="font-size:12px;"><span style="color:var(--text-light);">Lighting:</span> ' + escHtml(concept.lighting) + '</div>' +
+        '<div style="font-size:12px;display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">' + (concept.furniture||[]).map(f => '<span class="tag" style="background:var(--cream);color:var(--text-mid);border:0.5px solid var(--border-strong);">' + escHtml(f) + '</span>').join('') + '</div>' +
+        '<div style="font-size:12px;color:var(--text-mid);font-style:italic;border-top:0.5px solid var(--border);padding-top:8px;margin-top:2px;">"' + escHtml(concept.stylistNote) + '"</div>' +
         '<a href="' + stagedImageUrl + '" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;margin-top:4px;">↓ Open staged image</a>' +
       '</div></div>';
   if (!existing) grid.appendChild(card);
@@ -529,43 +570,40 @@ function renderBible(bible) {
   document.getElementById('bible-display').innerHTML =
     '<div class="bible-card">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">' +
-        '<h3>' + bible.styleName + '</h3>' +
+        '<h3>' + escHtml(bible.styleName) + '</h3>' +
         '<span class="badge" style="background:var(--accent);color:white;">Style Bible</span>' +
       '</div>' +
-      '<div class="bible-tagline">"' + bible.tagline + '"</div>' +
-      '<div class="bible-swatches">' + (bible.palette||[]).map((c,i) => '<div class="bible-swatch" style="background:' + c + ';" title="' + ((bible.paletteNames||[])[i]||c) + '"></div>').join('') + '</div>' +
+      '<div class="bible-tagline">"' + escHtml(bible.tagline) + '"</div>' +
+      '<div class="bible-swatches">' + (bible.palette||[]).map((c,i) => '<div class="bible-swatch" style="background:' + c + ';" title="' + escHtml((bible.paletteNames||[])[i]||c) + '"></div>').join('') + '</div>' +
       '<div class="bible-grid">' +
-        '<div class="bible-item"><span>Wood</span>' + bible.woodTone + '</div>' +
-        '<div class="bible-item"><span>Metal</span>' + bible.metalFinish + '</div>' +
-        '<div class="bible-item"><span>Fabrics</span>' + bible.fabricPalette + '</div>' +
-        '<div class="bible-item"><span>Lighting</span>' + bible.lightingTemp + '</div>' +
-        '<div class="bible-item" style="grid-column:1/-1;"><span>Mood</span>' + bible.overallMood + '</div>' +
-      '</div>' +
-    '</div>';
+        '<div class="bible-item"><span>Wood</span>' + escHtml(bible.woodTone) + '</div>' +
+        '<div class="bible-item"><span>Metal</span>' + escHtml(bible.metalFinish) + '</div>' +
+        '<div class="bible-item"><span>Fabrics</span>' + escHtml(bible.fabricPalette) + '</div>' +
+        '<div class="bible-item"><span>Lighting</span>' + escHtml(bible.lightingTemp) + '</div>' +
+        '<div class="bible-item" style="grid-column:1/-1;"><span>Mood</span>' + escHtml(bible.overallMood) + '</div>' +
+      '</div></div>';
 }
 
 async function callClaude(messages, maxTokens) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: maxTokens || 1000, messages: [{ role: 'user', content: messages }] })
+    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: maxTokens||1000, messages: [{ role: 'user', content: messages }] })
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message || 'API error');
   return data.content?.[0]?.text || '';
 }
+
 function getMime(d) { const m = d.match(/data:([^;]+);/); return m ? m[1] : 'image/jpeg'; }
 function lighten(hex) { try { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return 'rgba('+r+','+g+','+b+',0.12)'; } catch { return '#F5F5F5'; } }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-function startOver() { newProject(); }
+function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function downloadReport() {
   const name = document.getElementById('project-name-input').value.trim() || 'Untitled';
   const lines = ['STAGENEER AI — Virtual Staging Report', 'Project: ' + name, 'Style: ' + selectedStyle, 'Generated: ' + new Date().toLocaleDateString(), '', '--- STYLE BIBLE ---', ''];
-  if (styleBible) {
-    lines.push('Tagline: ' + styleBible.tagline, 'Wood: ' + styleBible.woodTone, 'Metal: ' + styleBible.metalFinish, 'Fabrics: ' + styleBible.fabricPalette, 'Lighting: ' + styleBible.lightingTemp, 'Mood: ' + styleBible.overallMood, '');
-  }
+  if (styleBible) lines.push('Tagline: ' + styleBible.tagline, 'Wood: ' + styleBible.woodTone, 'Metal: ' + styleBible.metalFinish, 'Fabrics: ' + styleBible.fabricPalette, 'Lighting: ' + styleBible.lightingTemp, 'Mood: ' + styleBible.overallMood, '');
   lines.push('--- ROOMS ---', '');
   stagingResults.forEach(r => {
     lines.push('## ' + r.room.roomName, '"' + r.concept.headline + '"', 'Key piece: ' + r.concept.keyPiece, 'Furniture: ' + (r.concept.furniture||[]).join(', '), 'Lighting: ' + r.concept.lighting, 'Stylist note: ' + r.concept.stylistNote, r.stagedImageUrl ? 'Image: ' + r.stagedImageUrl : '', '');
