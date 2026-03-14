@@ -679,10 +679,11 @@ Respond ONLY with a JSON object (no markdown):
       if (!jsonMatch2) throw new Error('Could not parse staging concept.');
       const concept = JSON.parse(jsonMatch2[0]);
 
-      // Step 2: Generate staged image via Pollinations.ai (free, no key needed)
-      const fullPrompt = concept.imagePrompt + ', photorealistic, professional real estate photography, 8k, interior design magazine quality, natural lighting, no people';
+      // Step 2: Generate staged image via Pollinations.ai
+      const fullPrompt = concept.imagePrompt + ', photorealistic, professional real estate photography, high quality, interior design, natural lighting, no people, no text';
       const encodedPrompt = encodeURIComponent(fullPrompt);
-      const stagedImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=768&model=flux&nologo=true&seed=${Math.floor(Math.random()*99999)}`;
+      const seed = Math.floor(Math.random() * 999999);
+      const stagedImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=768&nologo=true&seed=${seed}&enhance=true`;
 
       stagingResults.push({ room, concept, color, photos: roomPhotos, stagedImageUrl });
 
@@ -698,9 +699,8 @@ Respond ONLY with a JSON object (no markdown):
               style="width:100%;height:100%;object-fit:cover;display:block;"
               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
             />
-            <div style="display:none;width:100%;height:100%;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:1rem;background:${lighten(color)};">
-              <div style="font-size:20px;">🛋</div>
-              <div style="font-size:10px;text-align:center;color:var(--text-mid);">Image unavailable</div>
+            <div style="display:none;width:100%;height:100%;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:8px;padding:1rem;background:${lighten(color)};" id="err-${ri}">
+              <div style="font-size:11px;text-align:center;color:var(--text-mid);">Image loading — click below to open directly</div>
             </div>
             <span class="ba-label">After</span>
           </div>
