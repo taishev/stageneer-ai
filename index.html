@@ -526,7 +526,8 @@ async function startStaging() {
       if (!jsonMatch) throw new Error('Could not parse staging concept.');
       const concept = JSON.parse(jsonMatch[0]);
       if (ri > 0) await sleep(7000);
-      const fullPrompt = concept.imagePrompt + ', photorealistic, professional real estate photography, high quality, natural lighting, no people, no text';
+      const rawPrompt = concept.imagePrompt + ', photorealistic, professional real estate photography, high quality, natural lighting, no people, no text';
+      const fullPrompt = rawPrompt.length > 400 ? rawPrompt.substring(0, 400) : rawPrompt;
       const seed = Math.floor(Math.random() * 999999);
       const stagedImageUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(fullPrompt) + '?width=1024&height=768&nologo=true&seed=' + seed;
       stagingResults.push({ room, concept, color, photos: roomPhotos, stagedImageUrl });
