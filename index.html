@@ -528,7 +528,7 @@ async function startStaging() {
     const color = ROOM_COLORS[ri % ROOM_COLORS.length];
     const card = document.createElement('div');
     card.className = 'result-card'; card.id = 'card-' + ri;
-    card.innerHTML = '<div style="aspect-ratio:4/3;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div class="spinner"></div><div style="font-size:12px;color:var(--text-light);">Generating ' + escHtml(room.roomName) + '...</div></div><div style="padding:1rem;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:' + color + ';"></div><span style="font-weight:500;font-size:14px;">' + escHtml(room.roomName) + '</span></div></div>';
+    card.innerHTML = '<div style="aspect-ratio:4/3;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div class="spinner"></div><div style="font-size:12px;color:var(--text-light);">Generating ' + escHtml(room.roomName) + '...</div><div class="img-error-msg" style="font-size:11px;color:#C0392B;padding:0 1rem;text-align:center;"></div></div><div style="padding:1rem;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:' + color + ';"></div><span style="font-weight:500;font-size:14px;">' + escHtml(room.roomName) + '</span></div></div>';
     resultsGrid.appendChild(card);
   });
 
@@ -585,6 +585,12 @@ async function startStaging() {
         }
       } catch(imgErr) {
         console.warn('HF image error:', imgErr.message);
+        // Show error in card
+        const cardEl = document.getElementById('card-' + ri);
+        if (cardEl) {
+          const errDiv = cardEl.querySelector('.img-error-msg');
+          if (errDiv) errDiv.textContent = imgErr.message.substring(0, 80);
+        }
       }
       stagingResults.push({ room, concept, color, photos: roomPhotos, stagedImageUrl });
       renderResultCard(resultsGrid, room, concept, color, stagedImageUrl || '', ri);
