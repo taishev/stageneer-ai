@@ -270,8 +270,8 @@ const ROOM_COLORS = ['#C8956C','#4A7C59','#3B6EA5','#9B59B6','#E74C3C','#F39C12'
 // ── API Key ──────────────────────────────────────────────
 function saveApiKey() {
   const k = document.getElementById('api-key-input').value.trim();
-  if (!k.startsWith('sk-ant')) {
-    document.getElementById('key-status').textContent = 'Key should start with sk-ant-…';
+  if (!k) {
+    document.getElementById('key-status').textContent = 'Please enter your API key.';
     document.getElementById('key-status').style.color = '#C0392B';
     return;
   }
@@ -302,9 +302,9 @@ function renderLanding() {
     const roomNames = (p.results||[]).map(r => r.roomName).slice(0,4);
     const date = p.savedAt ? new Date(p.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
     html += '<div class="project-card" onclick="loadProject(\'' + id + '\')">' +
-      '<button class="project-card-del" onclick="event.stopPropagation();deleteProject(\'' + id + '\')">×</button>' +
+      '<button class="project-card-del" onclick="event.stopPropagation();deleteProject(\'' + id + '\')">&times;</button>' +
       '<div class="project-card-title">' + escHtml(p.name) + '</div>' +
-      '<div class="project-card-meta">' + date + ' · ' + (p.results||[]).length + ' rooms</div>' +
+      '<div class="project-card-meta">' + date + ' . ' + (p.results||[]).length + ' rooms</div>' +
       '<div class="project-card-style">' + escHtml(p.style||'') + '</div>' +
       '<div class="project-card-rooms">' + roomNames.map(r => '<span class="project-card-room">' + escHtml(r) + '</span>').join('') + ((p.results||[]).length > 4 ? '<span class="project-card-room">+' + ((p.results||[]).length - 4) + ' more</span>' : '') + '</div>' +
     '</div>';
@@ -347,7 +347,7 @@ function loadProject(id) {
   ['phase-upload','phase-analysis','phase-style'].forEach(ph => document.getElementById(ph).style.display = 'none');
   document.getElementById('phase-results').style.display = '';
   updateSteps('results');
-  document.getElementById('staging-progress-content').innerHTML = '<div class="status-msg success">✓ Loaded: <strong>' + escHtml(p.name) + '</strong> — ' + escHtml(p.style||'') + ' style</div>';
+  document.getElementById('staging-progress-content').innerHTML = '<div class="status-msg success">&#10003; Loaded: <strong>' + escHtml(p.name) + '</strong> - ' + escHtml(p.style||'') + ' style</div>';
   document.getElementById('bible-display').innerHTML = '';
   if (p.styleBible) renderBible(p.styleBible);
   const grid = document.getElementById('results-grid');
@@ -395,7 +395,7 @@ function handleFiles(files) {
 }
 function renderPhotos() {
   document.getElementById('photos-grid').innerHTML = photos.map(p =>
-    '<div class="photo-thumb"><img src="' + p.dataUrl + '" /><button class="remove-btn" onclick="removePhoto(\'' + p.id + '\')">×</button></div>'
+    '<div class="photo-thumb"><img src="' + p.dataUrl + '" /><button class="remove-btn" onclick="removePhoto(\'' + p.id + '\')">&times;</button></div>'
   ).join('');
   document.getElementById('analyze-btn').disabled = photos.length === 0;
 }
@@ -434,13 +434,13 @@ async function startAnalysis() {
   updateSteps('analysis');
   const bar = document.getElementById('progress-bar');
   const label = document.getElementById('progress-label');
-  bar.style.width = '10%'; label.textContent = 'Sending photos to Claude…';
+  bar.style.width = '10%'; label.textContent = 'Sending photos to Claude...';
   const imageContents = photos.map(p => ({ type: 'image', source: { type: 'base64', media_type: getMime(p.dataUrl), data: p.dataUrl.split(',')[1] } }));
   const prompt = 'You are an expert real estate photographer. I\'m giving you ' + photos.length + ' photos of an apartment.\nGroup them by room (same room from different angles = same group). Name each room. List photo indices (0-indexed). Note 1-2 key architectural features.\nRespond ONLY with a JSON array, no markdown:\n[{"roomName":"Living Room","photoIndices":[0,2],"features":"hardwood floors, bay window"},...]';
   try {
-    bar.style.width = '40%'; label.textContent = 'Claude is examining your photos…';
+    bar.style.width = '40%'; label.textContent = 'Claude is examining your photos...';
     const res = await callClaude([...imageContents, { type: 'text', text: prompt }], 2000);
-    bar.style.width = '75%'; label.textContent = 'Processing room groups…';
+    bar.style.width = '75%'; label.textContent = 'Processing room groups...';
     const jsonMatch = res.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error('Could not parse room data. Try uploading fewer photos (max 10).');
     roomGroups = JSON.parse(jsonMatch[0]);
@@ -465,10 +465,10 @@ function renderRoomGroups() {
       '<div class="room-dot" style="background:' + color + '"></div>' +
       '<span class="room-group-title">' + escHtml(room.roomName) + '</span>' +
       '<span style="color:var(--text-light);font-size:12px;">' + roomPhotos.length + ' photo' + (roomPhotos.length!==1?'s':'') + '</span>' +
-      '<span style="color:var(--text-light);font-size:12px;margin-left:4px;">↕</span></div>' +
+      '<span style="color:var(--text-light);font-size:12px;margin-left:4px;">&#8597;</span></div>' +
       '<div class="room-photos" id="room-group-' + ri + '">' +
       roomPhotos.map(p => '<div class="room-photo"><img src="' + p.dataUrl + '" /></div>').join('') +
-      (room.features ? '<div style="grid-column:1/-1;font-size:12px;color:var(--text-light);padding-top:4px;">✦ ' + escHtml(room.features) + '</div>' : '') +
+      (room.features ? '<div style="grid-column:1/-1;font-size:12px;color:var(--text-light);padding-top:4px;">* ' + escHtml(room.features) + '</div>' : '') +
       '</div></div>';
   }).join('');
   document.getElementById('analysis-actions').style.display = 'flex';
@@ -491,7 +491,7 @@ async function startStaging() {
   const notes = document.getElementById('extra-notes').value.trim();
 
   // Step 1: Style Bible
-  progressContent.innerHTML = '<div class="status-msg info" style="display:flex;align-items:center;gap:10px;"><div class="spinner"></div> Generating Style Bible for the whole apartment…</div>';
+  progressContent.innerHTML = '<div class="status-msg info" style="display:flex;align-items:center;gap:10px;"><div class="spinner"></div> Generating Style Bible for the whole apartment...</div>';
   const allRoomDesc = roomGroups.map(r => r.roomName + ': ' + (r.features||'standard')).join('\n');
   const biblePrompt = 'You are a world-class interior designer staging an entire apartment in ' + selectedStyle + ' style.\nRooms:\n' + allRoomDesc + '\n' + (notes ? 'Client notes: ' + notes : '') + '\n\nCreate a single cohesive Style Bible used across ALL rooms so the apartment feels unified.\n\nRespond ONLY with JSON, no markdown:\n{"styleName":"' + selectedStyle + '","tagline":"One evocative sentence","palette":["#hex1","#hex2","#hex3","#hex4"],"paletteNames":["n1","n2","n3","n4"],"woodTone":"specific","metalFinish":"e.g. brushed brass","fabricPalette":"e.g. oatmeal boucle, linen","lightingTemp":"e.g. 2700K warm white","flooringApproach":"approach","keyMaterials":["m1","m2","m3"],"avoidMaterials":["a1","a2"],"overallMood":"Two sentences"}';
   try {
@@ -500,21 +500,21 @@ async function startStaging() {
     if (!bibleMatch) throw new Error('Could not parse Style Bible');
     styleBible = JSON.parse(bibleMatch[0]);
     renderBible(styleBible);
-    progressContent.innerHTML = '<div class="status-msg success">✓ Style Bible created — staging ' + roomGroups.length + ' rooms…</div>';
+    progressContent.innerHTML = '<div class="status-msg success">&#10003; Style Bible created - staging ' + roomGroups.length + ' rooms...</div>';
   } catch (err) {
-    progressContent.innerHTML = '<div class="status-msg error">Style Bible error: ' + err.message + '. Continuing…</div>';
+    progressContent.innerHTML = '<div class="status-msg error">Style Bible error: ' + err.message + '. Continuing...</div>';
     styleBible = null;
   }
 
   // Step 2: Stage all rooms in parallel
-  progressContent.innerHTML = '<div class="status-msg info" style="display:flex;align-items:center;gap:10px;"><div class="spinner"></div> Staging all ' + roomGroups.length + ' rooms simultaneously…</div>';
+  progressContent.innerHTML = '<div class="status-msg info" style="display:flex;align-items:center;gap:10px;"><div class="spinner"></div> Staging all ' + roomGroups.length + ' rooms simultaneously...</div>';
 
   // Create placeholder cards for all rooms first
   roomGroups.forEach((room, ri) => {
     const color = ROOM_COLORS[ri % ROOM_COLORS.length];
     const card = document.createElement('div');
     card.className = 'result-card'; card.id = 'card-' + ri;
-    card.innerHTML = '<div style="aspect-ratio:4/3;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div class="spinner"></div><div style="font-size:12px;color:var(--text-light);">Generating ' + escHtml(room.roomName) + '…</div></div><div style="padding:1rem;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:' + color + ';"></div><span style="font-weight:500;font-size:14px;">' + escHtml(room.roomName) + '</span></div></div>';
+    card.innerHTML = '<div style="aspect-ratio:4/3;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div class="spinner"></div><div style="font-size:12px;color:var(--text-light);">Generating ' + escHtml(room.roomName) + '...</div></div><div style="padding:1rem;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:' + color + ';"></div><span style="font-weight:500;font-size:14px;">' + escHtml(room.roomName) + '</span></div></div>';
     resultsGrid.appendChild(card);
   });
 
@@ -524,7 +524,7 @@ async function startStaging() {
     if (roomPhotos.length === 0) return;
     try {
       const imageContents = roomPhotos.map(p => ({ type: 'image', source: { type: 'base64', media_type: getMime(p.dataUrl), data: p.dataUrl.split(',')[1] } }));
-      const bibleCtx = styleBible ? '\nSTYLE BIBLE — apply these EXACT specs to match the rest of the apartment:\n- Wood: ' + styleBible.woodTone + '\n- Metal: ' + styleBible.metalFinish + '\n- Fabrics: ' + styleBible.fabricPalette + '\n- Lighting: ' + styleBible.lightingTemp + '\n- Flooring: ' + styleBible.flooringApproach + '\n- Use: ' + (styleBible.keyMaterials||[]).join(', ') + '\n- Avoid: ' + (styleBible.avoidMaterials||[]).join(', ') : '';
+      const bibleCtx = styleBible ? '\nSTYLE BIBLE - apply these EXACT specs to match the rest of the apartment:\n- Wood: ' + styleBible.woodTone + '\n- Metal: ' + styleBible.metalFinish + '\n- Fabrics: ' + styleBible.fabricPalette + '\n- Lighting: ' + styleBible.lightingTemp + '\n- Flooring: ' + styleBible.flooringApproach + '\n- Use: ' + (styleBible.keyMaterials||[]).join(', ') + '\n- Avoid: ' + (styleBible.avoidMaterials||[]).join(', ') : '';
       const stagingPrompt = 'Stage this ' + room.roomName + ' in ' + selectedStyle + ' style.\nFeatures: ' + (room.features||'standard') + bibleCtx + '\n' + (notes ? 'Notes: ' + notes : '') + '\n\nStrictly follow the Style Bible so this room matches the whole apartment.\n\nRespond ONLY with JSON (no imagePrompt field needed):\n{"headline":"max 8 words","furniture":["i1","i2","i3"],"textiles":["t1","t2"],"lighting":"note","keyPiece":"hero piece","stylistNote":"one sentence"}';
       const text = await callClaude([...imageContents, { type: 'text', text: stagingPrompt }], 900);
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -533,7 +533,7 @@ async function startStaging() {
 
       // Stagger requests to avoid Pollinations rate limit (max 1 concurrent per IP)
       await sleep(ri * 5000);
-      // Ultra-short prompt — Pollinations fails on long prompts
+      // Ultra-short prompt - Pollinations fails on long prompts
       const styleShort = selectedStyle.replace('Minimal','').replace('Modern','').trim().toLowerCase();
       const shortPrompt = styleShort + ' ' + room.roomName.toLowerCase() + ', interior design, photorealistic';
       const seed = Math.floor(Math.random() * 999999);
@@ -548,7 +548,7 @@ async function startStaging() {
 
   // Update progress once all done
   const successCount = stagingResults.length;
-  progressContent.innerHTML = '<div class="status-msg success">✓ ' + successCount + ' of ' + roomGroups.length + ' rooms staged in <strong>' + escHtml(selectedStyle) + '</strong> with a unified Style Bible</div>';
+  progressContent.innerHTML = '<div class="status-msg success">&#10003; ' + successCount + ' of ' + roomGroups.length + ' rooms staged in <strong>' + escHtml(selectedStyle) + '</strong> with a unified Style Bible</div>';
   document.getElementById('results-actions').style.display = 'flex';
 }
 
@@ -562,7 +562,7 @@ function renderResultCard(grid, room, concept, color, stagedImageUrl, ri) {
     '<div class="before-after">' +
       '<div>' + (beforePhoto ? '<img src="' + beforePhoto.dataUrl + '" />' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-light);">No photo</div>') + '<span class="ba-label">Before</span></div>' +
       '<div><img src="' + stagedImageUrl + '" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" />' +
-        '<div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:' + lighten(color) + ';"><div style="font-size:11px;color:var(--text-mid);">Image loading…</div></div>' +
+        '<div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:' + lighten(color) + ';"><div style="font-size:11px;color:var(--text-mid);">Image loading...</div></div>' +
         '<span class="ba-label">After</span></div>' +
     '</div>' +
     '<div style="padding:1rem;">' +
@@ -574,7 +574,7 @@ function renderResultCard(grid, room, concept, color, stagedImageUrl, ri) {
         '<div style="font-size:12px;"><span style="color:var(--text-light);">Lighting:</span> ' + escHtml(concept.lighting) + '</div>' +
         '<div style="font-size:12px;display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;">' + (concept.furniture||[]).map(f => '<span class="tag" style="background:var(--cream);color:var(--text-mid);border:0.5px solid var(--border-strong);">' + escHtml(f) + '</span>').join('') + '</div>' +
         '<div style="font-size:12px;color:var(--text-mid);font-style:italic;border-top:0.5px solid var(--border);padding-top:8px;margin-top:2px;">"' + escHtml(concept.stylistNote) + '"</div>' +
-        '<a href="' + stagedImageUrl + '" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;margin-top:4px;">↓ Open staged image</a>' +
+        '<a href="' + stagedImageUrl + '" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;margin-top:4px;">&#8595; Open staged image</a>' +
       '</div></div>';
   if (!existing) grid.appendChild(card);
 }
@@ -615,7 +615,7 @@ function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').
 
 function downloadReport() {
   const name = document.getElementById('project-name-input').value.trim() || 'Untitled';
-  const lines = ['STAGENEER AI — Virtual Staging Report', 'Project: ' + name, 'Style: ' + selectedStyle, 'Generated: ' + new Date().toLocaleDateString(), '', '--- STYLE BIBLE ---', ''];
+  const lines = ['STAGENEER AI - Virtual Staging Report', 'Project: ' + name, 'Style: ' + selectedStyle, 'Generated: ' + new Date().toLocaleDateString(), '', '--- STYLE BIBLE ---', ''];
   if (styleBible) lines.push('Tagline: ' + styleBible.tagline, 'Wood: ' + styleBible.woodTone, 'Metal: ' + styleBible.metalFinish, 'Fabrics: ' + styleBible.fabricPalette, 'Lighting: ' + styleBible.lightingTemp, 'Mood: ' + styleBible.overallMood, '');
   lines.push('--- ROOMS ---', '');
   stagingResults.forEach(r => {
