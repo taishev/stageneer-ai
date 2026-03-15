@@ -545,7 +545,7 @@ async function startStaging() {
       if (!jsonMatch) throw new Error('Could not parse staging concept.');
       const concept = JSON.parse(jsonMatch[0]);
 
-      // Generate image via Hugging Face FLUX
+      // Generate image via Hugging Face FLUX (returns binary blob)
       const styleShort = selectedStyle.replace('Minimal','').replace('Modern','').replace('Luxury','').replace('Bright','').trim().toLowerCase();
       const roomShort = room.roomName.split('/')[0].trim().toLowerCase();
       const imagePrompt = styleShort + ' ' + roomShort + ', interior design, photorealistic, professional real estate photography, natural light, high quality';
@@ -564,11 +564,24 @@ async function startStaging() {
             height: 768
           })
         });
-        const hfData = await hfRes.json();
-        if (hfData.data && hfData.data[0] && hfData.data[0].url) {
-          stagedImageUrl = hfData.data[0].url;
-        } else if (hfData.error) {
-          throw new Error(hfData.error);
+        if (!hfRes.ok) {
+          const errText = await hfRes.text();
+          throw new Error('HF error: ' + errText.substring(0, 100));
+        }
+        const contentType = hfRes.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const hfData = await hfRes.json();
+          if (hfData.data && hfData.data[0] && hfData.data[0].url) {
+            stagedImageUrl = hfData.data[0].url;
+          } else if (hfData.data && hfData.data[0] && hfData.data[0].b64_json) {
+            stagedImageUrl = 'data:image/png;base64,' + hfData.data[0].b64_json;
+          } else {
+            throw new Error('Unexpected response: ' + JSON.stringify(hfData).substring(0,100));
+          }
+        } else {
+          // Binary image blob
+          const blob = await hfRes.blob();
+          stagedImageUrl = URL.createObjectURL(blob);
         }
       } catch(imgErr) {
         console.warn('HF image error:', imgErr.message);
