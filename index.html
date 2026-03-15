@@ -131,13 +131,19 @@
   <!-- API Key screen -->
   <div id="phase-apikey">
     <div class="panel" style="max-width:480px;">
-      <div class="panel-title">Enter your Anthropic API key to get started</div>
-      <div style="display:flex; gap:10px;">
-        <input type="password" id="api-key-input" placeholder="sk-ant-api..." style="flex:1;" onkeydown="if(event.key==='Enter')saveApiKey()" />
-        <button class="btn btn-primary" onclick="saveApiKey()">Continue →</button>
+      <div class="panel-title">API keys to get started</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div>
+          <label style="font-size:12px; color:var(--text-light); display:block; margin-bottom:4px;">Anthropic API key &mdash; <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a></label>
+          <input type="password" id="api-key-input" placeholder="sk-ant-api..." style="width:100%;" />
+        </div>
+        <div>
+          <label style="font-size:12px; color:var(--text-light); display:block; margin-bottom:4px;">Hugging Face token (for image generation) &mdash; <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:var(--accent);">huggingface.co</a></label>
+          <input type="password" id="hf-key-input" placeholder="hf_..." style="width:100%;" />
+        </div>
+        <button class="btn btn-primary" onclick="saveApiKey()" style="align-self:flex-end;">Continue &rarr;</button>
       </div>
       <div id="key-status" style="margin-top:8px; font-size:12px; color:var(--text-light);"></div>
-      <p style="margin-top:12px; font-size:12px; color:var(--text-light);">Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent);">console.anthropic.com</a></p>
     </div>
   </div>
 
@@ -259,6 +265,7 @@
 </div>
 <script>
 let apiKey = '';
+let hfKey = '';
 let photos = [];
 let roomGroups = [];
 let selectedStyle = '';
@@ -270,12 +277,19 @@ const ROOM_COLORS = ['#C8956C','#4A7C59','#3B6EA5','#9B59B6','#E74C3C','#F39C12'
 // ── API Key ──────────────────────────────────────────────
 function saveApiKey() {
   const k = document.getElementById('api-key-input').value.trim();
+  const h = document.getElementById('hf-key-input').value.trim();
   if (!k) {
-    document.getElementById('key-status').textContent = 'Please enter your API key.';
+    document.getElementById('key-status').textContent = 'Please enter your Anthropic API key.';
+    document.getElementById('key-status').style.color = '#C0392B';
+    return;
+  }
+  if (!h) {
+    document.getElementById('key-status').textContent = 'Please enter your Hugging Face token.';
     document.getElementById('key-status').style.color = '#C0392B';
     return;
   }
   apiKey = k;
+  hfKey = h;
   document.getElementById('phase-apikey').style.display = 'none';
   goToLanding();
 }
@@ -531,19 +545,36 @@ async function startStaging() {
       if (!jsonMatch) throw new Error('Could not parse staging concept.');
       const concept = JSON.parse(jsonMatch[0]);
 
-      // Stagger requests - Pollinations allows 1 at a time
-      await sleep(ri * 12000);
+      // Generate image via Hugging Face FLUX
       const styleShort = selectedStyle.replace('Minimal','').replace('Modern','').replace('Luxury','').replace('Bright','').trim().toLowerCase();
       const roomShort = room.roomName.split('/')[0].trim().toLowerCase();
-      const shortPrompt = styleShort + ' ' + roomShort + ' interior design photorealistic';
-      const seed = Math.floor(Math.random() * 99999);
-      // Use turbo model with minimal params
-      const stagedImageUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(shortPrompt) + '?width=896&height=672&model=turbo&nologo=true&seed=' + seed;
-      // Pre-fetch to trigger generation before rendering
-      try { await fetch(stagedImageUrl, { mode: 'no-cors' }); } catch(e) {}
-      await sleep(3000);
+      const imagePrompt = styleShort + ' ' + roomShort + ', interior design, photorealistic, professional real estate photography, natural light, high quality';
+      let stagedImageUrl = null;
+      try {
+        const hfRes = await fetch('https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + hfKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: imagePrompt,
+            num_inference_steps: 4,
+            width: 1024,
+            height: 768
+          })
+        });
+        const hfData = await hfRes.json();
+        if (hfData.data && hfData.data[0] && hfData.data[0].url) {
+          stagedImageUrl = hfData.data[0].url;
+        } else if (hfData.error) {
+          throw new Error(hfData.error);
+        }
+      } catch(imgErr) {
+        console.warn('HF image error:', imgErr.message);
+      }
       stagingResults.push({ room, concept, color, photos: roomPhotos, stagedImageUrl });
-      renderResultCard(resultsGrid, room, concept, color, stagedImageUrl, ri);
+      renderResultCard(resultsGrid, room, concept, color, stagedImageUrl || '', ri);
     } catch (err) {
       document.getElementById('card-' + ri).innerHTML = '<div style="padding:1rem;color:#C0392B;font-size:13px;">Error staging ' + escHtml(room.roomName) + ': ' + err.message + '</div>';
     }
