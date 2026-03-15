@@ -531,13 +531,17 @@ async function startStaging() {
       if (!jsonMatch) throw new Error('Could not parse staging concept.');
       const concept = JSON.parse(jsonMatch[0]);
 
-      // Stagger requests to avoid Pollinations rate limit (max 1 concurrent per IP)
-      await sleep(ri * 5000);
-      // Ultra-short prompt - Pollinations fails on long prompts
-      const styleShort = selectedStyle.replace('Minimal','').replace('Modern','').trim().toLowerCase();
-      const shortPrompt = styleShort + ' ' + room.roomName.toLowerCase() + ', interior design, photorealistic';
-      const seed = Math.floor(Math.random() * 999999);
-      const stagedImageUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(shortPrompt) + '?width=1024&height=768&nologo=true&seed=' + seed;
+      // Stagger requests - Pollinations allows 1 at a time
+      await sleep(ri * 12000);
+      const styleShort = selectedStyle.replace('Minimal','').replace('Modern','').replace('Luxury','').replace('Bright','').trim().toLowerCase();
+      const roomShort = room.roomName.split('/')[0].trim().toLowerCase();
+      const shortPrompt = styleShort + ' ' + roomShort + ' interior design photorealistic';
+      const seed = Math.floor(Math.random() * 99999);
+      // Use turbo model with minimal params
+      const stagedImageUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(shortPrompt) + '?width=896&height=672&model=turbo&nologo=true&seed=' + seed;
+      // Pre-fetch to trigger generation before rendering
+      try { await fetch(stagedImageUrl, { mode: 'no-cors' }); } catch(e) {}
+      await sleep(3000);
       stagingResults.push({ room, concept, color, photos: roomPhotos, stagedImageUrl });
       renderResultCard(resultsGrid, room, concept, color, stagedImageUrl, ri);
     } catch (err) {
@@ -561,7 +565,7 @@ function renderResultCard(grid, room, concept, color, stagedImageUrl, ri) {
     '<div class="before-after">' +
       '<div>' + (beforePhoto ? '<img src="' + beforePhoto.dataUrl + '" />' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-light);">No photo</div>') + '<span class="ba-label">Before</span></div>' +
       '<div><img src="' + stagedImageUrl + '" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" />' +
-        '<div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:' + lighten(color) + ';"><div style="font-size:11px;color:var(--text-mid);">Image loading...</div></div>' +
+        '<div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:' + lighten(color) + ';"><div style="font-size:11px;color:var(--text-mid);">Image failed</div><a href="' + stagedImageUrl + '" target="_blank" style="font-size:11px;color:var(--blue);text-decoration:none;">Open in new tab</a></div>' +
         '<span class="ba-label">After</span></div>' +
     '</div>' +
     '<div style="padding:1rem;">' +
