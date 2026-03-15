@@ -550,52 +550,41 @@ async function startStaging() {
       const roomShort = room.roomName.split('/')[0].trim().toLowerCase();
       const imagePrompt = styleShort + ' ' + roomShort + ', interior design, photorealistic, professional real estate photography, natural light, high quality';
       let stagedImageUrl = null;
+      let imageError = null;
       try {
-                const hfRes = await fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
+        const hfRes = await fetch('https://router.huggingface.co/hf-inference/v1/images/generations', {
           method: 'POST',
           headers: {
             'Authorization': 'Bearer ' + hfKey,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-                        inputs: imagePrompt,
-                        parameters: {
-                                        num_inference_steps: 4,
-                                        width: 1024,
-                                        height: 1024
-                        }
+            model: 'black-forest-labs/FLUX.1-schnell',
+            prompt: imagePrompt,
+            num_inference_steps: 4,
+            response_format: 'b64_json'
           })
         });
         if (!hfRes.ok) {
           const errText = await hfRes.text();
-          throw new Error('HF error: ' + errText.substring(0, 100));
+          let errMsg = 'HF ' + hfRes.status;
+          try { const errJson = JSON.parse(errText); errMsg += ': ' + (errJson.error || errText).substring(0, 150); } catch(e) { errMsg += ': ' + errText.substring(0, 150); }
+          throw new Error(errMsg);
         }
-        const contentType = hfRes.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-          const hfData = await hfRes.json();
-          if (hfData.data && hfData.data[0] && hfData.data[0].url) {
-            stagedImageUrl = hfData.data[0].url;
-          } else if (hfData.data && hfData.data[0] && hfData.data[0].b64_json) {
-            stagedImageUrl = 'data:image/png;base64,' + hfData.data[0].b64_json;
-          } else {
-            throw new Error('Unexpected response: ' + JSON.stringify(hfData).substring(0,100));
-          }
+        const hfData = await hfRes.json();
+        if (hfData.data && hfData.data[0] && hfData.data[0].b64_json) {
+          stagedImageUrl = 'data:image/png;base64,' + hfData.data[0].b64_json;
+        } else if (hfData.data && hfData.data[0] && hfData.data[0].url) {
+          stagedImageUrl = hfData.data[0].url;
         } else {
-          // Binary image blob
-          const blob = await hfRes.blob();
-          stagedImageUrl = URL.createObjectURL(blob);
+          throw new Error('Unexpected HF response: ' + JSON.stringify(hfData).substring(0, 100));
         }
       } catch(imgErr) {
         console.warn('HF image error:', imgErr.message);
-        // Show error in card
-        const cardEl = document.getElementById('card-' + ri);
-        if (cardEl) {
-          const errDiv = cardEl.querySelector('.img-error-msg');
-          if (errDiv) errDiv.textContent = imgErr.message.substring(0, 80);
-        }
+        imageError = imgErr.message;
       }
       stagingResults.push({ room, concept, color, photos: roomPhotos, stagedImageUrl });
-      renderResultCard(resultsGrid, room, concept, color, stagedImageUrl || '', ri);
+      renderResultCard(resultsGrid, room, concept, color, stagedImageUrl || '', ri, imageError);
     } catch (err) {
       document.getElementById('card-' + ri).innerHTML = '<div style="padding:1rem;color:#C0392B;font-size:13px;">Error staging ' + escHtml(room.roomName) + ': ' + err.message + '</div>';
     }
@@ -607,7 +596,7 @@ async function startStaging() {
   document.getElementById('results-actions').style.display = 'flex';
 }
 
-function renderResultCard(grid, room, concept, color, stagedImageUrl, ri) {
+function renderResultCard(grid, room, concept, color, stagedImageUrl, ri, imageError) {
   const existing = document.getElementById('card-' + ri);
   const card = existing || document.createElement('div');
   card.className = 'result-card';
@@ -616,9 +605,14 @@ function renderResultCard(grid, room, concept, color, stagedImageUrl, ri) {
   card.innerHTML =
     '<div class="before-after">' +
       '<div>' + (beforePhoto ? '<img src="' + beforePhoto.dataUrl + '" />' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-light);">No photo</div>') + '<span class="ba-label">Before</span></div>' +
-      '<div><img src="' + stagedImageUrl + '" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" />' +
-        '<div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:' + lighten(color) + ';"><div style="font-size:11px;color:var(--text-mid);">Image failed</div><a href="' + stagedImageUrl + '" target="_blank" style="font-size:11px;color:var(--blue);text-decoration:none;">Open in new tab</a></div>' +
-        '<span class="ba-label">After</span></div>' +
+      (stagedImageUrl
+        ? '<div><img src="' + stagedImageUrl + '" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" />' +
+          '<div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:' + lighten(color) + ';"><div style="font-size:11px;color:var(--text-mid);">Image failed to load</div><a href="' + stagedImageUrl + '" target="_blank" style="font-size:11px;color:var(--blue);text-decoration:none;">Open in new tab</a></div>' +
+          '<span class="ba-label">After</span></div>'
+        : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:' + lighten(color) + ';padding:12px;text-align:center;">' +
+          '<div style="font-size:11px;font-weight:500;color:var(--text-mid);">AI image unavailable</div>' +
+          (imageError ? '<div style="font-size:10px;color:#C0392B;word-break:break-all;max-width:180px;">' + imageError.substring(0, 120) + '</div>' : '') +
+          '<span class="ba-label">After</span></div>') +
     '</div>' +
     '<div style="padding:1rem;">' +
       '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;"><div style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;margin-top:5px;"></div>' +
@@ -633,7 +627,6 @@ function renderResultCard(grid, room, concept, color, stagedImageUrl, ri) {
       '</div></div>';
   if (!existing) grid.appendChild(card);
 }
-
 function renderBible(bible) {
   document.getElementById('bible-display').innerHTML =
     '<div class="bible-card">' +
