@@ -525,17 +525,17 @@ async function startStaging() {
     try {
       const imageContents = roomPhotos.map(p => ({ type: 'image', source: { type: 'base64', media_type: getMime(p.dataUrl), data: p.dataUrl.split(',')[1] } }));
       const bibleCtx = styleBible ? '\nSTYLE BIBLE — apply these EXACT specs to match the rest of the apartment:\n- Wood: ' + styleBible.woodTone + '\n- Metal: ' + styleBible.metalFinish + '\n- Fabrics: ' + styleBible.fabricPalette + '\n- Lighting: ' + styleBible.lightingTemp + '\n- Flooring: ' + styleBible.flooringApproach + '\n- Use: ' + (styleBible.keyMaterials||[]).join(', ') + '\n- Avoid: ' + (styleBible.avoidMaterials||[]).join(', ') : '';
-      const stagingPrompt = 'Stage this ' + room.roomName + ' in ' + selectedStyle + ' style.\nFeatures: ' + (room.features||'standard') + bibleCtx + '\n' + (notes ? 'Notes: ' + notes : '') + '\n\nStrictly follow the Style Bible so this room matches the whole apartment.\n\nRespond ONLY with JSON:\n{"headline":"max 8 words","imagePrompt":"Detailed photorealistic prompt. Start with \'Professionally staged ' + room.roomName + ',\'. Include exact wood, metals, fabrics, lighting from the Style Bible.","furniture":["i1","i2","i3"],"textiles":["t1","t2"],"lighting":"note","keyPiece":"hero piece","stylistNote":"one sentence"}';
+      const stagingPrompt = 'Stage this ' + room.roomName + ' in ' + selectedStyle + ' style.\nFeatures: ' + (room.features||'standard') + bibleCtx + '\n' + (notes ? 'Notes: ' + notes : '') + '\n\nStrictly follow the Style Bible so this room matches the whole apartment.\n\nRespond ONLY with JSON (no imagePrompt field needed):\n{"headline":"max 8 words","furniture":["i1","i2","i3"],"textiles":["t1","t2"],"lighting":"note","keyPiece":"hero piece","stylistNote":"one sentence"}';
       const text = await callClaude([...imageContents, { type: 'text', text: stagingPrompt }], 900);
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('Could not parse staging concept.');
       const concept = JSON.parse(jsonMatch[0]);
-      // No delay - requests fire in parallel
-      // Build a short focused prompt Pollinations can handle
-      const styleShort = selectedStyle.toLowerCase();
-      const woodShort = styleBible ? styleBible.woodTone.split(',')[0] : '';
-      const metalShort = styleBible ? styleBible.metalFinish : '';
-      const shortPrompt = room.roomName + ', ' + styleShort + ' interior design, ' + woodShort + ', ' + metalShort + ', ' + (styleBible ? styleBible.fabricPalette.split(',')[0] : '') + ', photorealistic, real estate photography, natural light, no people';
+
+      // Stagger requests to avoid Pollinations rate limit (max 1 concurrent per IP)
+      await sleep(ri * 5000);
+      // Ultra-short prompt — Pollinations fails on long prompts
+      const styleShort = selectedStyle.replace('Minimal','').replace('Modern','').trim().toLowerCase();
+      const shortPrompt = styleShort + ' ' + room.roomName.toLowerCase() + ', interior design, photorealistic';
       const seed = Math.floor(Math.random() * 999999);
       const stagedImageUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(shortPrompt) + '?width=1024&height=768&nologo=true&seed=' + seed;
       stagingResults.push({ room, concept, color, photos: roomPhotos, stagedImageUrl });
