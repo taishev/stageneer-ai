@@ -506,17 +506,22 @@ async function startStaging() {
     styleBible = null;
   }
 
-  // Step 2: Stage each room
-  for (let ri = 0; ri < roomGroups.length; ri++) {
-    const room = roomGroups[ri];
+  // Step 2: Stage all rooms in parallel
+  progressContent.innerHTML = '<div class="status-msg info" style="display:flex;align-items:center;gap:10px;"><div class="spinner"></div> Staging all ' + roomGroups.length + ' rooms simultaneously…</div>';
+
+  // Create placeholder cards for all rooms first
+  roomGroups.forEach((room, ri) => {
     const color = ROOM_COLORS[ri % ROOM_COLORS.length];
-    const roomPhotos = room.photoIndices.map(i => photos[i]).filter(Boolean);
-    if (roomPhotos.length === 0) continue;
-    progressContent.innerHTML = '<div class="status-msg info" style="display:flex;align-items:center;gap:10px;"><div class="spinner"></div> Staging room ' + (ri+1) + ' of ' + roomGroups.length + ': <strong style="margin-left:4px;">' + escHtml(room.roomName) + '</strong>…</div><div class="progress-bar-wrap"><div class="progress-bar" style="width:' + Math.round((ri/roomGroups.length)*100) + '%"></div></div>';
     const card = document.createElement('div');
     card.className = 'result-card'; card.id = 'card-' + ri;
     card.innerHTML = '<div style="aspect-ratio:4/3;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;"><div class="spinner"></div><div style="font-size:12px;color:var(--text-light);">Generating ' + escHtml(room.roomName) + '…</div></div><div style="padding:1rem;"><div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:' + color + ';"></div><span style="font-weight:500;font-size:14px;">' + escHtml(room.roomName) + '</span></div></div>';
     resultsGrid.appendChild(card);
+  });
+
+  await Promise.all(roomGroups.map(async (room, ri) => {
+    const color = ROOM_COLORS[ri % ROOM_COLORS.length];
+    const roomPhotos = room.photoIndices.map(i => photos[i]).filter(Boolean);
+    if (roomPhotos.length === 0) return;
     try {
       const imageContents = roomPhotos.map(p => ({ type: 'image', source: { type: 'base64', media_type: getMime(p.dataUrl), data: p.dataUrl.split(',')[1] } }));
       const bibleCtx = styleBible ? '\nSTYLE BIBLE — apply these EXACT specs to match the rest of the apartment:\n- Wood: ' + styleBible.woodTone + '\n- Metal: ' + styleBible.metalFinish + '\n- Fabrics: ' + styleBible.fabricPalette + '\n- Lighting: ' + styleBible.lightingTemp + '\n- Flooring: ' + styleBible.flooringApproach + '\n- Use: ' + (styleBible.keyMaterials||[]).join(', ') + '\n- Avoid: ' + (styleBible.avoidMaterials||[]).join(', ') : '';
@@ -525,18 +530,25 @@ async function startStaging() {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('Could not parse staging concept.');
       const concept = JSON.parse(jsonMatch[0]);
-      if (ri > 0) await sleep(7000);
-      const rawPrompt = concept.imagePrompt + ', photorealistic, professional real estate photography, high quality, natural lighting, no people, no text';
-      const fullPrompt = rawPrompt.length > 400 ? rawPrompt.substring(0, 400) : rawPrompt;
+      // No delay - requests fire in parallel
+      // Build a short focused prompt Pollinations can handle
+      const styleShort = selectedStyle.toLowerCase();
+      const woodShort = styleBible ? styleBible.woodTone.split(',')[0] : '';
+      const metalShort = styleBible ? styleBible.metalFinish : '';
+      const shortPrompt = room.roomName + ', ' + styleShort + ' interior design, ' + woodShort + ', ' + metalShort + ', ' + (styleBible ? styleBible.fabricPalette.split(',')[0] : '') + ', photorealistic, real estate photography, natural light, no people';
       const seed = Math.floor(Math.random() * 999999);
-      const stagedImageUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(fullPrompt) + '?width=1024&height=768&nologo=true&seed=' + seed;
+      const stagedImageUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(shortPrompt) + '?width=1024&height=768&nologo=true&seed=' + seed;
       stagingResults.push({ room, concept, color, photos: roomPhotos, stagedImageUrl });
       renderResultCard(resultsGrid, room, concept, color, stagedImageUrl, ri);
     } catch (err) {
       document.getElementById('card-' + ri).innerHTML = '<div style="padding:1rem;color:#C0392B;font-size:13px;">Error staging ' + escHtml(room.roomName) + ': ' + err.message + '</div>';
     }
   }
-  progressContent.innerHTML = '<div class="status-msg success">✓ All ' + roomGroups.length + ' rooms staged in <strong>' + escHtml(selectedStyle) + '</strong> with a unified Style Bible</div>';
+  }));
+
+  // Update progress once all done
+  const successCount = stagingResults.length;
+  progressContent.innerHTML = '<div class="status-msg success">✓ ' + successCount + ' of ' + roomGroups.length + ' rooms staged in <strong>' + escHtml(selectedStyle) + '</strong> with a unified Style Bible</div>';
   document.getElementById('results-actions').style.display = 'flex';
 }
 
